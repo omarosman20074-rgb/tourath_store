@@ -1,1 +1,502 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تراث ستور - Torathe Store</title>
+    
+    <!-- Bootstrap 5 RTL -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.rtl.min.css">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- مكتبة Supabase JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <style>
+        :root {
+            --alabaster-grey: #D9D9D9;
+            --racing-red: #DD0200;
+            --black-cherry: #55100D;
+            --coffee-bean: #1A0706;
+        }
 
+        @font-face {
+            font-family: 'Momken';
+            src: url('fonts/Momken.otf') format('opentype');
+            font-weight: normal;
+            font-style: normal;
+        }
+
+        body, h1, h2, h3, h4, h5, h6, .navbar, .card, button, a, table, input {
+            font-family: 'Momken', sans-serif !important;
+        }
+        html { scroll-behavior: smooth; }
+        body { background-color: var(--alabaster-grey) !important; color: var(--coffee-bean); }
+
+        .navbar-custom { background-color: var(--coffee-bean) !important; border-bottom: 2px solid var(--racing-red); }
+        .navbar-brand .logo-img { width: 45px; height: 45px; object-fit: cover; border-radius: 50%; border: 2px solid var(--racing-red); background-color: #fff; }
+
+        .hero-section {
+            background: linear-gradient(rgba(26, 7, 6, 0.85), rgba(26, 7, 6, 0.85)), url('https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=1200&q=80');
+            background-size: cover; background-position: center; color: #fff; padding: 80px 0; text-align: center;
+        }
+
+        .product-card {
+            background-color: var(--black-cherry) !important; color: #fff !important; border-radius: 20px !important; overflow: hidden; border: 1px solid rgba(221, 2, 0, 0.3) !important;
+        }
+        .product-card img { border-top-left-radius: 20px; border-top-right-radius: 20px; }
+
+        .btn-custom-red { background-color: var(--racing-red) !important; color: #fff !important; border: none; transition: opacity 0.3s; }
+        .btn-custom-red:hover { opacity: 0.9; }
+
+        .contact-box { background-color: var(--black-cherry); color: #ffffff; text-decoration: none; display: block; transition: transform 0.3s, background-color 0.3s; }
+        .contact-box:hover { transform: translateY(-5px); background-color: #3e0b09; color: #fff; }
+
+        #toast-container { position: fixed; bottom: 20px; left: 20px; z-index: 9999; }
+        .custom-toast {
+            background-color: var(--coffee-bean);
+            color: #fff;
+            border-right: 4px solid var(--racing-red);
+            padding: 12px 20px;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            margin-top: 10px;
+            animation: slideIn 0.3s ease;
+        }
+        @keyframes slideIn { from { transform: translateX(-100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+        footer { background-color: var(--coffee-bean) !important; color: #fff !important; }
+    </style>
+</head>
+<body>
+
+    <div id="toast-container"></div>
+
+    <!-- الهيدر -->
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-custom sticky-top shadow-sm">
+        <div class="container">
+            <a id="secret-logo" class="navbar-brand fw-bold d-flex align-items-center gap-2" href="#home" style="cursor: pointer;">
+                <img src="f-logo.png" alt="تراث ستور" class="logo-img" onerror="this.src='https://via.placeholder.com/45?text=Logo'">
+                <span style="color: var(--alabaster-grey);">تراث ستور</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item"><a class="nav-link active text-white" href="#home">الرئيسية</a></li>
+                    <li class="nav-item"><a class="nav-link text-white-50" href="#products">المنتجات</a></li>
+                    <li class="nav-item"><a class="nav-link text-white-50" href="#about">من نحن</a></li>
+                    <li class="nav-item"><a class="nav-link text-white-50" href="#contact">تواصل معنا</a></li>
+                </ul>
+                <a href="#cart-section" class="btn btn-outline-light position-relative border-0">
+                    <i class="fas fa-shopping-cart text-danger"></i> السلة
+                    <span id="cart-count" class="position-absolute top-0 start-100 translate-middle badge rounded-pill" style="background-color: var(--racing-red);">0</span>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- لوحة تحكم الأدمن -->
+    <div id="admin-panel" class="container my-4 p-4 rounded-4 shadow border" style="background-color: #fff; display: none; border-color: var(--racing-red) !important;">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4 class="fw-bold text-danger m-0"><i class="fas fa-tools"></i> لوحة تحكم الأدمن (سحابي مباشر)</h4>
+            <button class="btn btn-secondary btn-sm" onclick="toggleAdminPanel()">إغلاق اللوحة</button>
+        </div>
+        <p class="text-muted small">ارفع الصورة من جهازك، والمنتج هيتسمع في كل مكان في الدولة لحظياً!</p>
+        
+        <div class="row g-3 mb-4 p-3 rounded-3 border bg-light">
+            <h5 class="fw-bold text-dark">إضافة منتج جديد:</h5>
+            <div class="col-md-3">
+                <label class="form-label fw-bold small">اسم المنتج:</label>
+                <input type="text" id="new-p-name" class="form-control" placeholder="مثال: عباية ملكي">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label fw-bold small">السعر (جنيه):</label>
+                <input type="number" id="new-p-price" class="form-control" placeholder="750">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label fw-bold small">الكمية:</label>
+                <input type="number" id="new-p-stock" class="form-control" value="5">
+            </div>
+            <div class="col-md-5">
+                <label class="form-label fw-bold small">وصف المنتج:</label>
+                <input type="text" id="new-p-desc" class="form-control" placeholder="تصميم مميز وأصيل">
+            </div>
+            <div class="col-12">
+                <label class="form-label fw-bold small">صورة المنتج من جهازك:</label>
+                <input type="file" id="new-p-file" class="form-control" accept="image/*">
+            </div>
+            <div class="col-12 text-end">
+                <button class="btn btn-custom-red px-4 fw-bold" onclick="addNewProduct()">نشر المنتج للجميع</button>
+            </div>
+        </div>
+
+        <h5 class="fw-bold text-dark mb-2">المنتجات الحالية:</h5>
+        <div class="table-responsive">
+            <table class="table table-bordered align-middle">
+                <thead class="table-dark">
+                    <tr>
+                        <th>المنتج</th>
+                        <th>السعر</th>
+                        <th>المخزون</th>
+                        <th>إجراء</th>
+                    </tr>
+                </thead>
+                <tbody id="admin-products-table"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- الهيرو -->
+    <section id="home" class="hero-section">
+        <div class="container">
+            <h1 class="display-5 fw-bold mb-2" style="color: var(--alabaster-grey);">أهلاً بك في تراث ستور</h1>
+            <p class="lead mb-4 text-white-50">اكتشف أرقى الملابس التراثية والعصرية.</p>
+            <div class="mt-4">
+                <a href="#products" class="btn btn-custom-red btn-lg fw-bold px-5 shadow">تصفح المنتجات</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- المنتجات -->
+    <section id="products" class="container py-5">
+        <div class="text-center mb-5">
+            <h2 class="fw-bold text-uppercase" style="color: var(--coffee-bean);">منتجاتنا المميزة</h2>
+        </div>
+        <div id="products-grid" class="row g-4"></div>
+    </section>
+
+    <!-- من نحن -->
+    <section id="about" class="py-5" style="background-color: var(--alabaster-grey); border-top: 1px solid #ccc;">
+        <div class="container text-center">
+            <h2 class="fw-bold mb-3" style="color: var(--coffee-bean);">من نحن</h2>
+            <p class="text-muted w-75 mx-auto">نحن في "تراث ستور" نعتز بتقديم أجمل الأزياء التراثية والأنيقة.</p>
+        </div>
+    </section>
+
+    <!-- التواصل -->
+    <section id="contact" class="container py-5 text-center">
+        <h2 class="fw-bold mb-3" style="color: var(--coffee-bean);">تواصل معنا</h2>
+        <div class="row justify-content-center">
+            <div class="col-md-4 mb-3">
+                <a href="tel:+201027710954" class="p-3 shadow-sm rounded-4 contact-box text-decoration-none d-block">
+                    <i class="fas fa-phone-alt fs-3 mb-2" style="color: var(--racing-red);"></i>
+                    <h5 class="fw-bold">خدمة العملاء</h5>
+                    <p class="text-white-50 mb-0" dir="ltr">01027710954</p>
+                </a>
+            </div>
+            <div class="col-md-4 mb-3">
+                <a href="https://wa.me/+201027710954" target="_blank" class="p-3 shadow-sm rounded-4 contact-box text-decoration-none d-block">
+                    <i class="fab fa-whatsapp fs-3 mb-2 text-success"></i>
+                    <h5 class="fw-bold">واتساب المتجر</h5>
+                    <p class="text-white-50 mb-0" dir="ltr">01027710954</p>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- السلة -->
+    <section id="cart-section" class="container py-5 rounded-4 shadow-sm my-4" style="background-color: #fff;">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="fw-bold m-0" style="color: var(--coffee-bean);">سلة المشتريات</h2>
+            <button class="btn btn-outline-danger btn-sm" onclick="clearCart()"><i class="fas fa-trash-alt"></i> إفراغ السلة</button>
+        </div>
+        <div class="row g-4">
+            <div class="col-lg-8">
+                <div class="table-responsive">
+                    <table class="table align-middle">
+                        <thead>
+                            <tr>
+                                <th>المنتج</th>
+                                <th>السعر</th>
+                                <th>الكمية</th>
+                                <th>الإجمالي</th>
+                                <th>إجراء</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cart-items-body"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="p-4 rounded-4 border text-white" style="background-color: var(--coffee-bean);">
+                    <h4 class="fw-bold mb-3">ملخص الحساب</h4>
+                    <hr class="border-secondary">
+                    <div class="d-flex justify-content-between mb-3">
+                        <span class="fw-bold">الإجمالي الكلي:</span>
+                        <span id="grand-total" class="fw-bold fs-5" style="color: var(--alabaster-grey);">0 جنيه</span>
+                    </div>
+                    <button class="btn btn-custom-red w-100 fw-bold py-2 shadow-sm" onclick="checkoutWhatsApp()">
+                        <i class="fab fa-whatsapp fs-5"></i> إتمام الطلب عبر واتساب
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="py-4 border-top">
+        <div class="container text-center text-white-50 font-monospace">
+            Copyright &copy; Torathe Store 2026
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // تم ربط بيانات الـ Supabase الخاصة بك تلقائياً
+        const SUPABASE_URL = 'https://zvikrcgvnsdrlfmhoomf.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_INh3uS8KIEsczgIu_NK-ww_uv8aaHAd';
+        
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let products = [];
+
+        function showToast(message) {
+            let container = document.getElementById('toast-container');
+            let toast = document.createElement('div');
+            toast.className = 'custom-toast';
+            toast.innerHTML = `<i class="fas fa-bell me-2 text-danger"></i> ${message}`;
+            container.appendChild(toast);
+            setTimeout(() => { toast.remove(); }, 3000);
+        }
+
+        async function fetchProducts() {
+            try {
+                let { data, error } = await _supabase.from('products').select('*').order('id', { ascending: false });
+                if (error) throw error;
+                products = data || [];
+                renderAll();
+            } catch (e) {
+                console.error("خطأ في جلب البيانات:", e);
+            }
+        }
+
+        function renderAll() {
+            renderProductsUI(products);
+            renderAdminTable(products);
+            updateCartUI();
+        }
+
+        function renderProductsUI(prods) {
+            let grid = document.getElementById('products-grid');
+            if (!grid) return;
+            grid.innerHTML = '';
+            prods.forEach(p => {
+                let out = p.stock <= 0;
+                grid.innerHTML += `
+                    <div class="col-lg-3 col-md-6">
+                        <div class="card h-100 shadow product-card">
+                            <img src="${p.image}" class="card-img-top" style="height: 220px; object-fit: cover;" onerror="this.src='https://via.placeholder.com/500'">
+                            <div class="card-body text-center d-flex flex-column justify-content-between">
+                                <div>
+                                    <h5 class="card-title fw-bold">${p.name}</h5>
+                                    <p class="text-white-50 small mb-1">${p.description || 'تصميم مميز'}</p>
+                                    <p class="fw-bold fs-5 mb-1" style="color: var(--alabaster-grey);">${p.price} جنيه</p>
+                                    <p class="small fw-bold ${out ? 'text-danger' : 'text-warning'}">المخزون: ${p.stock}</p>
+                                </div>
+                                <button class="btn ${out ? 'btn-secondary' : 'btn-custom-red'} btn-sm w-100 mt-2" onclick="addToCart('${p.id}')" ${out ? 'disabled' : ''}>
+                                    ${out ? 'خلصت الكمية' : 'أضف للسلة'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>`;
+            });
+        }
+
+        function renderAdminTable(prods) {
+            let tbody = document.getElementById('admin-products-table');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            prods.forEach(p => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td class="fw-bold"><img src="${p.image}" style="width: 40px; height: 40px; object-fit: cover; border-radius: 50%; margin-left: 10px;" onerror="this.src='https://via.placeholder.com/40'"> ${p.name}</td>
+                        <td>${p.price} جنيه</td>
+                        <td><span class="badge bg-secondary">${p.stock}</span></td>
+                        <td><button class="btn btn-danger btn-sm" onclick="deleteProduct('${p.id}')"><i class="fas fa-trash"></i> حذف</button></td>
+                    </tr>`;
+            });
+        }
+
+        async function addNewProduct() {
+            let name = document.getElementById('new-p-name').value.trim();
+            let price = parseFloat(document.getElementById('new-p-price').value);
+            let stock = parseInt(document.getElementById('new-p-stock').value);
+            let desc = document.getElementById('new-p-desc').value.trim();
+            let fileInput = document.getElementById('new-p-file');
+
+            if (!name || isNaN(price) || isNaN(stock) || fileInput.files.length === 0) {
+                alert('من فضلك أكمل جميع الحقول واختر صورة من جهازك.');
+                return;
+            }
+
+            let file = fileInput.files[0];
+            let reader = new FileReader();
+
+            reader.onload = async function(e) {
+                let base64Image = e.target.result;
+
+                let { error } = await _supabase.from('products').insert([
+                    {
+                        name: name,
+                        price: price,
+                        stock: stock,
+                        description: desc || 'تصميم مميز',
+                        image: base64Image
+                    }
+                ]);
+
+                if (error) {
+                    alert('خطأ أثناء النشر: ' + error.message);
+                } else {
+                    showToast("تم نشر المنتج وتحديثه للجميع بنجاح!");
+                    document.getElementById('new-p-name').value = '';
+                    document.getElementById('new-p-price').value = '';
+                    document.getElementById('new-p-stock').value = '5';
+                    document.getElementById('new-p-desc').value = '';
+                    fileInput.value = '';
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function deleteProduct(id) {
+            if (confirm('متأكد من حذف المنتج نهائياً؟')) {
+                let { error } = await _supabase.from('products').delete().eq('id', id);
+                if (error) {
+                    alert('خطأ في الحذف');
+                } else {
+                    showToast("تم حذف المنتج بنجاح");
+                }
+            }
+        }
+
+        async function addToCart(id) {
+            let p = products.find(item => item.id == id);
+            if (p && p.stock > 0) {
+                let newStock = p.stock - 1;
+                let { error } = await _supabase.from('products').update({ stock: newStock }).eq('id', id);
+                
+                if (!error) {
+                    let cart = JSON.parse(localStorage.getItem('cart')) || [];
+                    let existing = cart.find(item => item.id == id);
+                    if (existing) { existing.quantity += 1; } 
+                    else { cart.push({ id: p.id, name: p.name, price: p.price, quantity: 1 }); }
+                    
+                    localStorage.setItem('cart', JSON.stringify(cart));
+                    updateCartUI();
+                    showToast(`تمت إضافة "${p.name}" للسلة`);
+                }
+            }
+        }
+
+        function updateCartUI() {
+            let cart = JSON.parse(localStorage.getItem('cart')) || [];
+            let totalCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+            let countEl = document.getElementById('cart-count');
+            if (countEl) countEl.innerText = totalCount;
+
+            let tbody = document.getElementById('cart-items-body');
+            let grandTotalElement = document.getElementById('grand-total');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            let grandTotal = 0;
+
+            if (cart.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted py-4">السلة فارغة!</td></tr>`;
+                if (grandTotalElement) grandTotalElement.innerText = '0 جنيه';
+                return;
+            }
+
+            cart.forEach((item, index) => {
+                let sub = item.price * item.quantity;
+                grandTotal += sub;
+                tbody.innerHTML += `
+                    <tr>
+                        <td class="fw-bold">${item.name}</td>
+                        <td>${item.price} جنيه</td>
+                        <td><span class="mx-2 fw-bold fs-5">${item.quantity}</span></td>
+                        <td class="fw-bold text-danger">${sub} جنيه</td>
+                        <td><button class="btn btn-danger btn-sm" onclick="removeItem(${index})"><i class="fas fa-trash"></i></button></td>
+                    </tr>`;
+            });
+            if (grandTotalElement) grandTotalElement.innerText = grandTotal + ' جنيه';
+        }
+
+        window.removeItem = async function(index) {
+            let cart = JSON.parse(localStorage.getItem('cart')) || [];
+            let removedItem = cart[index];
+            let p = products.find(item => item.id == removedItem.id);
+            if (p) {
+                let restoredStock = p.stock + removedItem.quantity;
+                await _supabase.from('products').update({ stock: restoredStock }).eq('id', p.id);
+            }
+            cart.splice(index, 1);
+            localStorage.setItem('cart', JSON.stringify(cart));
+            updateCartUI();
+        }
+
+        window.clearCart = async function() {
+            let cart = JSON.parse(localStorage.getItem('cart')) || [];
+            if (cart.length === 0) return;
+            if (confirm('متأكد إنك عايز تفضي السلة بالكامل؟')) {
+                for (let item of cart) {
+                    let p = products.find(prod => prod.id == item.id);
+                    if (p) {
+                        await _supabase.from('products').update({ stock: p.stock + item.quantity }).eq('id', p.id);
+                    }
+                }
+                localStorage.removeItem('cart');
+                updateCartUI();
+            }
+        }
+
+        let tapCount = 0, lastTapTime = 0;
+        document.getElementById('secret-logo').addEventListener('click', (e) => {
+            e.preventDefault();
+            let now = Date.now();
+            if (now - lastTapTime > 1000) tapCount = 1; else tapCount++;
+            lastTapTime = now;
+            if (tapCount === 4) {
+                tapCount = 0;
+                let pass = prompt("رمز حماية الأدمن:");
+                if (pass === "1234") {
+                    document.getElementById('admin-panel').style.display = 'block';
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+            }
+        });
+
+        function toggleAdminPanel() {
+            document.getElementById('admin-panel').style.display = 'none';
+        }
+
+        window.checkoutWhatsApp = function() {
+            let cart = JSON.parse(localStorage.getItem('cart')) || [];
+            if (cart.length === 0) { alert('السلة فارغة!'); return; }
+            let name = prompt("اسمك الكريم:");
+            if (!name) return;
+            let msg = `أنا ${name.trim()} وطلبت الآتي من تراث ستور:%0A`;
+            let total = 0;
+            cart.forEach(i => {
+                total += (i.price * i.quantity);
+                msg += `- ${i.name} (الكمية: ${i.quantity}) - ${i.price * i.quantity} جنيه%0A`;
+            });
+            msg += `الإجمالي: ${total} جنيه`;
+            window.open(`https://wa.me/+201027710954?text=${msg}`, '_blank');
+        }
+
+        // التحديث اللحظي (Realtime) ليعمل الفورية عند الجميع
+        _supabase.channel('public:products')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, payload => {
+                fetchProducts();
+                showToast("تم تحديث المنتجات لحظياً!");
+            })
+            .subscribe();
+
+        window.addEventListener('load', fetchProducts);
+    </script>
+</body>
+</html>
