@@ -955,11 +955,8 @@ window.supabase.createClient(
 ========================= */
 
 let products = [];
-
 let isAdmin = false;
-
 let authModal;
-
 let checkoutModal;
 
 
@@ -2146,94 +2143,87 @@ async function refreshAdminState(){
         "admin-panel"
     ).style.display = "block";
 
-    await fetchOrders();
+    await loadAdminData();
 
 }
 
 
 /* =========================
-   ADMIN PRODUCTS
+   LOAD ADMIN DATA
 ========================= */
 
-function renderAdminProducts(){
+async function loadAdminData(){
 
-    const table =
+    if(!isAdmin)
+        return;
+
+    await Promise.all([
+        renderAdminProducts(),
+        renderAdminOrders()
+    ]);
+
+}
+
+
+/* =========================
+   RENDER ADMIN PRODUCTS
+========================= */
+
+async function renderAdminProducts(){
+
+    const tbody =
     document.getElementById(
         "admin-products-table"
     );
 
-    if(!table)
+    if(!tbody)
         return;
 
     if(!products.length){
 
-        table.innerHTML = `
-
+        tbody.innerHTML = `
         <tr>
-
-            <td
-                colspan="4"
-                class="text-center">
-
+            <td colspan="4" class="text-center text-muted">
                 لا توجد منتجات
-
             </td>
-
         </tr>
-
         `;
 
         return;
     }
 
-    table.innerHTML =
+    tbody.innerHTML =
     products.map(
-    product=>`
-
-    <tr>
-
-        <td>
-            ${escapeHTML(product.name)}
-        </td>
-
-        <td>
-            ${money(product.price)}
-        </td>
-
-        <td>
-            ${product.stock}
-        </td>
-
-        <td>
-
-            <button
-                class="btn btn-danger btn-sm"
-                onclick="deleteProduct('${product.id}')">
-
-                <i class="fas fa-trash"></i>
-
-                حذف
-
-            </button>
-
-        </td>
-
-    </tr>
-
-    `
+        p=>`
+        <tr>
+            <td class="fw-bold">
+                ${escapeHTML(p.name)}
+            </td>
+            <td>
+                ${money(p.price)}
+            </td>
+            <td>
+                ${p.stock}
+            </td>
+            <td>
+                <button
+                    class="btn btn-outline-danger btn-sm"
+                    onclick="deleteProduct('${p.id}')">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
+        </tr>
+        `
     ).join("");
 
 }
 
 
 /* =========================
-   ADD PRODUCT
+   ADD NEW PRODUCT
 ========================= */
 
 async function addNewProduct(){
-
-    if(!isAdmin)
-        return;
 
     const name =
     document.getElementById(
@@ -2254,19 +2244,26 @@ async function addNewProduct(){
         ).value
     );
 
-    const description =
+    const desc =
     document.getElementById(
         "new-p-desc"
     ).value.trim();
 
-    const file =
+    const fileInput =
     document.getElementById(
         "new-p-file"
-    ).files[0];
+    );
+
+    const button =
+    document.getElementById(
+        "publish-product-btn"
+    );
 
     if(
         !name ||
+        isNaN(price) ||
         price <= 0 ||
+        isNaN(stock) ||
         stock < 0
     ){
 
@@ -2278,99 +2275,63 @@ async function addNewProduct(){
         return;
     }
 
-    if(
-        file &&
-        file.size >
-        3*1024*1024
-    ){
+    button.disabled = true;
 
-        showToast(
-            "حجم الصورة يجب ألا يتجاوز 3MB",
-            "error"
-        );
-
-        return;
-    }
-
-    let imageUrl = null;
+    button.innerHTML =
+    '<span class="spinner-border spinner-border-sm"></span> جاري النشر...';
 
     try{
 
-        if(file){
+        let imageUrl = "";
 
-            const allowed = [
-                "image/jpeg",
-                "image/png",
-                "image/webp"
-            ];
+        if(fileInput.files.length > 0){
 
-            if(
-                !allowed.includes(
-                    file.type
-                )
-            ){
+            const file = fileInput.files[0];
 
-                throw new Error(
-                    "نوع الصورة غير مسموح"
-                );
-            }
+            const ext =
+            file.name.split('.').pop();
 
-            const extension =
-            file.name
-            .split(".")
-            .pop()
-            .toLowerCase();
+            const fileName =
+            `${Date.now()}-${Math.random().toString(36).substring(2)}.${ext}`;
 
-            const path =
-            crypto.randomUUID() +
-            "." +
-            extension;
-
-            const{
-                error:uploadError
-            } =
+            const{error:uploadError} =
             await db.storage
             .from("products")
-            .upload(
-                path,
-                file,
-                {
-                    cacheControl:"3600",
-                    upsert:false
-                }
-            );
+            .upload(fileName, file);
 
             if(uploadError)
                 throw uploadError;
 
             const{
-                data
+                data:{
+                    publicUrl
+                }
             } =
             db.storage
             .from("products")
-            .getPublicUrl(
-                path
-            );
+            .getPublicUrl(fileName);
 
-            imageUrl =
-            data.publicUrl;
+            imageUrl = publicUrl;
         }
 
-        const{
-            error
-        } =
+        const{error:insertError} =
         await db
         .from("products")
         .insert({
             name,
             price,
             stock,
-            description,
+            description:desc,
             image:imageUrl
         });
 
-        if(error)
-            throw error;
+        if(insertError)
+            throw insertError;
+
+        showToast(
+            "تم نشر المنتج بنجاح",
+            "success"
+        );
 
         document.getElementById(
             "new-p-name"
@@ -2388,14 +2349,7 @@ async function addNewProduct(){
             "new-p-desc"
         ).value = "";
 
-        document.getElementById(
-            "new-p-file"
-        ).value = "";
-
-        showToast(
-            "تم نشر المنتج بنجاح",
-            "success"
-        );
+        fileInput.value = "";
 
         await fetchProducts();
 
@@ -2405,9 +2359,16 @@ async function addNewProduct(){
 
         showToast(
             error.message ||
-            "تعذر إضافة المنتج",
+            "حدث خطأ أثناء رفع المنتج",
             "error"
         );
+
+    }finally{
+
+        button.disabled = false;
+
+        button.innerHTML =
+        '<i class="fas fa-upload"></i> نشر المنتج';
 
     }
 
@@ -2420,26 +2381,18 @@ async function addNewProduct(){
 
 async function deleteProduct(id){
 
-    if(!isAdmin)
-        return;
-
     if(
         !confirm(
-            "هل أنت متأكد من حذف المنتج؟"
+            "هل أنت متأكد من حذف هذا المنتج؟"
         )
     )
         return;
 
-    const{
-        error
-    } =
+    const{error} =
     await db
     .from("products")
     .delete()
-    .eq(
-        "id",
-        id
-    );
+    .eq("id", id);
 
     if(error){
 
@@ -2452,7 +2405,7 @@ async function deleteProduct(id){
     }
 
     showToast(
-        "تم حذف المنتج",
+        "تم حذف المنتج بنجاح",
         "success"
     );
 
@@ -2462,12 +2415,17 @@ async function deleteProduct(id){
 
 
 /* =========================
-   ORDERS
+   RENDER ADMIN ORDERS
 ========================= */
 
-async function fetchOrders(){
+async function renderAdminOrders(){
 
-    if(!isAdmin)
+    const tbody =
+    document.getElementById(
+        "admin-orders-table"
+    );
+
+    if(!tbody)
         return;
 
     const{
@@ -2476,9 +2434,7 @@ async function fetchOrders(){
     } =
     await db
     .from("orders")
-    .select(
-        "id,customer_name,customer_phone,total,status,created_at"
-    )
+    .select("*")
     .order(
         "created_at",
         {
@@ -2488,181 +2444,62 @@ async function fetchOrders(){
 
     if(error){
 
-        console.error(error);
+        tbody.innerHTML = `
+        <tr>
+            <td colspan="6" class="text-center text-danger">
+                تعذر تحميل الطلبات
+            </td>
+        </tr>
+        `;
 
         return;
     }
 
-    const table =
-    document.getElementById(
-        "admin-orders-table"
-    );
+    const orders = data || [];
 
-    table.innerHTML =
-    (data || [])
-    .map(
-    order=>`
+    if(!orders.length){
 
-    <tr>
+        tbody.innerHTML = `
+        <tr>
+            <td colspan="6" class="text-center text-muted">
+                لا توجد طلبات حتى الآن
+            </td>
+        </tr>
+        `;
 
-        <td>
-            #${order.id}
-        </td>
+        return;
+    }
 
-        <td>
-            ${escapeHTML(order.customer_name)}
-        </td>
-
-        <td dir="ltr">
-            ${escapeHTML(order.customer_phone)}
-        </td>
-
-        <td>
-            ${money(order.total)}
-        </td>
-
-        <td>
-
-            <select
-                class="form-select form-select-sm"
-                onchange="updateOrderStatus('${order.id}',this.value)">
-
-                <option
-                    value="new"
-                    ${order.status==="new"?"selected":""}>
-                    جديد
-                </option>
-
-                <option
-                    value="processing"
-                    ${order.status==="processing"?"selected":""}>
-                    قيد التجهيز
-                </option>
-
-                <option
-                    value="shipped"
-                    ${order.status==="shipped"?"selected":""}>
-                    تم الشحن
-                </option>
-
-                <option
-                    value="delivered"
-                    ${order.status==="delivered"?"selected":""}>
-                    تم التسليم
-                </option>
-
-                <option
-                    value="cancelled"
-                    ${order.status==="cancelled"?"selected":""}>
-                    ملغي
-                </option>
-
-            </select>
-
-        </td>
-
-        <td>
-
-            ${new Date(
-                order.created_at
-            ).toLocaleString("ar-EG")}
-
-        </td>
-
-    </tr>
-
-    `
+    tbody.innerHTML =
+    orders.map(
+        o=>`
+        <tr>
+            <td>
+                #${o.id}
+            </td>
+            <td class="fw-bold">
+                ${escapeHTML(o.customer_name)}
+            </td>
+            <td dir="ltr">
+                ${escapeHTML(o.customer_phone)}
+            </td>
+            <td class="fw-bold text-danger">
+                ${money(o.total)}
+            </td>
+            <td>
+                <span class="badge bg-success">
+                    ${escapeHTML(o.status || "جديد")}
+                </span>
+            </td>
+            <td>
+                ${new Date(o.created_at).toLocaleString("ar-EG")}
+            </td>
+        </tr>
+        `
     ).join("");
 
 }
 
-
-/* =========================
-   UPDATE ORDER STATUS
-========================= */
-
-async function updateOrderStatus(
-    id,
-    status
-){
-
-    if(!isAdmin)
-        return;
-
-    const{
-        error
-    } =
-    await db
-    .from("orders")
-    .update({
-        status
-    })
-    .eq(
-        "id",
-        id
-    );
-
-    if(error){
-
-        showToast(
-            "تعذر تحديث حالة الطلب",
-            "error"
-        );
-
-        return;
-    }
-
-    showToast(
-        "تم تحديث حالة الطلب",
-        "success"
-    );
-
-}
-
-
-/* =========================
-   REALTIME PRODUCTS
-========================= */
-
-db.channel(
-    "products-realtime"
-)
-.on(
-    "postgres_changes",
-    {
-        event:"*",
-        schema:"public",
-        table:"products"
-    },
-    async()=>{
-        await fetchProducts();
-    }
-)
-.subscribe();
-
-
-/* =========================
-   REALTIME ORDERS
-========================= */
-
-db.channel(
-    "orders-realtime"
-)
-.on(
-    "postgres_changes",
-    {
-        event:"*",
-        schema:"public",
-        table:"orders"
-    },
-    async()=>{
-        if(isAdmin)
-            await fetchOrders();
-    }
-)
-.subscribe();
-
 </script>
-
 </body>
 </html>
