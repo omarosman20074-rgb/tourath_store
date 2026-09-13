@@ -3,286 +3,359 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>متجري الإلكتروني</title>
+    <title>متجر تراث ستور</title>
     <!-- Bootstrap 5 RTL CSS -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.rtl.min.css">
-    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css.rtl.min.css">
+    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        @font-face {
+            font-family: 'Momken';
+            src: url('fonts/Momken.otf') format('opentype');
+        }
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Tajawal', sans-serif, 'Momken';
             background-color: #f8f9fa;
         }
-        .navbar-brand {
-            font-weight: bold;
+        .brand-font {
+            font-family: 'Momken', sans-serif;
         }
-        #admin-panel {
-            display: none;
+        .product-card img {
+            height: 200px;
+            object-fit: cover;
         }
     </style>
 </head>
 <body>
 
-    <!-- النافبار (القائمة العلوية) -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
+    <!-- شريط التنقل -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
         <div class="container">
-            <a class="navbar-brand" href="#"><i class="fas fa-store text-danger"></i> متجري</a>
+            <a class="navbar-brand brand-font fs-3" href="#">
+                <img src="f-logo.png" alt="Logo" width="40" height="40" class="d-inline-block align-text-top ms-2">
+                تراث ستور
+            </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <a class="nav-link active" href="#">الرئيسية</a>
-                    </li>
+                    <li class="nav-item"><a class="nav-link active" href="#" onclick="showSection('shop')">الرئيسية</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#" onclick="showSection('admin')">لوحة التحكم</a></li>
                 </ul>
-                <!-- زر فتح نافذة تسجيل دخول الأدمن -->
-                <button class="btn btn-outline-light btn-sm" data-bs-toggle="modal" data-bs-target="#admin-login-modal">
-                    <i class="fas fa-user-shield"></i> دخول الأدمن
-                </button>
+                <div class="d-flex">
+                    <button class="btn btn-outline-light position-relative" data-bs-toggle="modal" data-bs-target="#cartModal">
+                        <i class="fas fa-shopping-cart"></i> السلة
+                        <span id="cart-badge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">0</span>
+                    </button>
+                </div>
             </div>
         </div>
     </nav>
 
-    <!-- المحتوى الرئيسي (عرض المنتجات) -->
-    <div class="container my-5">
-        <h2 class="mb-4 text-center fw-bold">منتجاتنا المتاحة</h2>
-        <div class="row" id="products-container">
-            <!-- المنتجات ستظهر هنا -->
-        </div>
-    </div>
+    <!-- المحتوى الرئيسي -->
+    <div class="container my-4">
 
-    <!-- لوحة تحكم الأدمن -->
-    <div class="container my-5" id="admin-panel">
-        <div class="card shadow border-0 p-4 mb-5">
-            <h3 class="text-danger mb-4"><i class="fas fa-gauge"></i> لوحة تحكم الأدمن</h3>
-            
-            <!-- قسم إضافة منتج جديد -->
-            <div class="card bg-light border-0 p-3 mb-4">
-                <h5 class="mb-3">إضافة منتج جديد</h5>
-                <div class="row g-3">
-                    <div class="col-md-4">
-                        <input type="text" id="new-p-name" class="form-control" placeholder="اسم المنتج">
+        <!-- قسم المتجر -->
+        <section id="shop-section">
+            <h2 class="mb-4 text-center brand-font">منتجاتنا التراثية</h2>
+            <div id="products-grid" class="row g-4">
+                <!-- يتم تحميل المنتجات هنا برمجياً -->
+            </div>
+        </section>
+
+        <!-- قسم لوحة التحكم (الأدمن) -->
+        <section id="admin-section" style="display: none;">
+            <div id="admin-auth-container" class="card p-4 mx-auto" style="max-width: 400px;">
+                <h3 class="text-center mb-3">تسجيل دخول المشرفين</h3>
+                <div class="mb-3">
+                    <label class="form-label">البريد الإلكتروني</label>
+                    <input type="email" id="admin-email" class="form-control">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">كلمة المرور</label>
+                    <input type="password" id="admin-password" class="form-control">
+                </div>
+                <button class="btn btn-primary w-100" onclick="adminLogin()">دخول</button>
+            </div>
+
+            <div id="admin-dashboard" style="display: none;">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h3>لوحة التحكم والإدارة</h3>
+                    <button class="btn btn-danger btn-sm" onclick="adminLogout()">تسجيل خروج</button>
+                </div>
+                
+                <!-- تبويبات لوحة التحكم -->
+                <ul class="nav nav-tabs mb-3" id="adminTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#manage-products">المنتجات</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#manage-orders">الطلبات</button>
+                    </li>
+                </ul>
+
+                <div class="tab-content">
+                    <!-- إدارة المنتجات -->
+                    <div class="tab-pane fade show active" id="manage-products">
+                        <div class="card p-3 mb-4">
+                            <h5>إضافة منتج جديد</h5>
+                            <form id="addProductForm" onsubmit="handleAddProduct(event)">
+                                <div class="mb-2"><input type="text" id="prod-name" placeholder="اسم المنتج" class="form-control" required></div>
+                                <div class="mb-2"><input type="number" step="0.01" id="prod-price" placeholder="السعر" class="form-control" required></div>
+                                <div class="mb-2"><input type="number" id="prod-stock" placeholder="المخزون" class="form-control" required></div>
+                                <div class="mb-2"><textarea id="prod-desc" placeholder="الوصف" class="form-control"></textarea></div>
+                                <div class="mb-2"><input type="file" id="prod-image" class="form-control" accept="image/*"></div>
+                                <button type="submit" class="btn btn-success">حفظ المنتج</button>
+                            </form>
+                        </div>
+                        <div id="admin-products-list" class="row g-3"></div>
                     </div>
-                    <div class="col-md-3">
-                        <input type="number" id="new-p-price" class="form-control" placeholder="السعر">
-                    </div>
-                    <div class="col-md-3">
-                        <input type="number" id="new-p-stock" class="form-control" placeholder="المخزون" value="5">
-                    </div>
-                    <div class="col-md-2">
-                        <button class="btn btn-danger w-100" onclick="addNewProduct()">
-                            <i class="fas fa-upload"></i> نشر
-                        </button>
-                    </div>
-                    <div class="col-12">
-                        <textarea id="new-p-desc" class="form-control" placeholder="وصف المنتج"></textarea>
+
+                    <!-- إدارة الطلبات -->
+                    <div class="tab-pane fade" id="manage-orders">
+                        <div id="admin-orders-list"></div>
                     </div>
                 </div>
             </div>
+        </section>
 
-            <!-- جدول المنتجات -->
-            <h5 class="mb-3">إدارة المنتجات</h5>
-            <div class="table-responsive mb-4">
-                <table class="table table-striped align-middle">
-                    <thead class="table-dark">
-                        <tr>
-                            <th>المنتج</th>
-                            <th>السعر</th>
-                            <th>المخزون</th>
-                            <th>إجراء</th>
-                        </tr>
-                    </thead>
-                    <tbody id="admin-products-table">
-                        <!-- جدول المنتجات -->
-                    </tbody>
-                </table>
-            </div>
-        </div>
     </div>
 
-    <!-- نافذة تسجيل دخول الأدمن -->
-    <div class="modal fade" id="admin-login-modal" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content p-3">
-                <div class="modal-header border-0">
-                    <h5 class="modal-title fw-bold"><i class="fas fa-user-shield text-danger"></i> دخول الأدمن</h5>
+    <!-- نافذة سلة المشتريات -->
+    <div class="modal fade" id="cartModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">سلة المشتريات</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <form id="admin-login-form">
-                        <div class="mb-3">
-                            <label class="form-label">البريد الإلكتروني</label>
-                            <input type="email" id="admin-email" class="form-control" required value="omarosman20074@gmail.com">
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">كلمة المرور</label>
-                            <input type="password" id="admin-password" class="form-control" required>
-                        </div>
-                        <button type="submit" class="btn btn-danger w-100">تسجيل الدخول</button>
+                    <div id="cart-items-list"></div>
+                    <hr>
+                    <h5>المجموع الكلي: <span id="cart-total">0</span> ر.س</h5>
+                    <hr>
+                    <form id="checkout-form" onsubmit="checkout(event)">
+                        <div class="mb-2"><input type="text" id="cust-name" placeholder="اسم العميل" class="form-control" required></div>
+                        <div class="mb-2"><input type="text" id="cust-phone" placeholder="رقم الهاتف" class="form-control" required></div>
+                        <div class="mb-2"><textarea id="cust-address" placeholder="عنوان التوصيل بالتفصيل" class="form-control" required></textarea></div>
+                        <button type="submit" class="btn btn-success w-100">إتمام الطلب</button>
                     </form>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Bootstrap JS Bundle -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- مكتبة Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
+    <!-- كود الجافاسكريبت للربط وتشغيل المتجر -->
     <script>
-        // تخزين محلي (LocalStorage) بدون أي حاجة لسيرفر خارجي
-        let products = JSON.parse(localStorage.getItem('my_store_products')) || [
-            { id: '1', name: 'منتج تجريبي 1', price: 150, stock: 10, description: 'هذا وصف تجريبي للمنتج الأول' }
-        ];
+        // ضع بيانات مشروعك في Supabase هنا
+        const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+        const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+        
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        document.addEventListener("DOMContentLoaded", () => {
-            renderProducts();
-            setupEventListeners();
+        let cart = [];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchProducts();
+            updateCartUI();
         });
 
-        function renderProducts() {
-            const container = document.getElementById("products-container");
-            if (!container) return;
+        function showSection(section) {
+            document.getElementById('shop-section').style.display = section === 'shop' ? 'block' : 'none';
+            document.getElementById('admin-section').style.display = section === 'admin' ? 'block' : 'none';
+            if(section === 'admin') checkAdminAuth();
+        }
 
-            if (!products.length) {
-                container.innerHTML = `<div class="col-12 text-center text-muted py-5">لا توجد منتجات متاحة حالياً</div>`;
+        // جلب وعرض المنتجات
+        async function fetchProducts() {
+            const { data, error } = await supabaseClient.from('products').select('*');
+            const grid = document.getElementById('products-grid');
+            grid.innerHTML = '';
+            
+            if (error) {
+                console.error(error);
                 return;
             }
 
-            container.innerHTML = products.map(p => `
-                <div class="col-md-4 mb-4">
-                    <div class="card h-100 shadow-sm border-0">
-                        <div class="card-body d-flex flex-column">
-                            <h5 class="card-title fw-bold">${escapeHTML(p.name)}</h5>
-                            <p class="card-text text-muted small flex-grow-1">${escapeHTML(p.description || '')}</p>
-                            <div class="d-flex justify-content-between align-items-center mt-3">
-                                <span class="text-danger fw-bold fs-5">${money(p.price)}</span>
-                                <button class="btn btn-primary btn-sm" onclick="alert('تم إضافة المنتج إلى السلة')">
-                                    <i class="fas fa-cart-plus"></i> أضف للسلة
-                                </button>
+            data.forEach(product => {
+                grid.innerHTML += `
+                    <div class="col-md-4">
+                        <div class="card product-card h-100 shadow-sm">
+                            <img src="${product.image || 'f-logo.png'}" class="card-img-top" alt="...">
+                            <div class="card-body d-flex flex-column">
+                                <h5 class="card-title">${product.name}</h5>
+                                <p class="card-text text-muted small">${product.description || ''}</p>
+                                <div class="mt-auto">
+                                    <p class="fw-bold text-primary">${product.price} ر.س</p>
+                                    <button class="btn btn-outline-dark w-100" onclick='addToCart(${JSON.stringify(product)})'>إضافة للسلة</button>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            `).join("");
+                `;
+            });
         }
 
-        function setupEventListeners() {
-            const loginForm = document.getElementById("admin-login-form");
-            if (loginForm) {
-                loginForm.addEventListener("submit", handleAdminLogin);
-            }
-        }
-
-        function handleAdminLogin(event) {
-            event.preventDefault();
-            const email = document.getElementById("admin-email").value.trim();
-            const password = document.getElementById("admin-password").value.trim();
-
-            if (email === "omarosman20074@gmail.com" && password === "54902007") {
-                const modalEl = document.getElementById('admin-login-modal');
-                const modal = bootstrap.Modal.getInstance(modalEl);
-                if (modal) modal.hide();
-
-                const adminPanel = document.getElementById("admin-panel");
-                if (adminPanel) {
-                    adminPanel.style.display = "block";
-                    adminPanel.scrollIntoView({ behavior: "smooth" });
-                }
-
-                renderAdminProducts();
-                alert("تم تسجيل الدخول بنجاح كأدمن!");
+        // إدارة السلة
+        function addToCart(product) {
+            const existing = cart.find(item => item.product_id === product.id);
+            if (existing) {
+                existing.quantity += 1;
             } else {
-                alert("بيانات الدخول غير صحيحة");
+                cart.push({ product_id: product.id, name: product.name, price: product.price, quantity: 1 });
             }
+            updateCartUI();
+            alert('تمت إضافة المنتج للسلة');
         }
 
-        function renderAdminProducts() {
-            const tbody = document.getElementById("admin-products-table");
-            if (!tbody) return;
+        function updateCartUI() {
+            document.getElementById('cart-badge').innerText = cart.reduce((sum, item) => sum + item.quantity, 0);
+            const list = document.getElementById('cart-items-list');
+            list.innerHTML = '';
+            let total = 0;
 
-            if (!products.length) {
-                tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted">لا توجد منتجات</td></tr>`;
+            cart.forEach((item, index) => {
+                total += item.price * item.quantity;
+                list.innerHTML += `
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span>${item.name} (${item.quantity})</span>
+                        <span>${item.price * item.quantity} ر.س</span>
+                        <button class="btn btn-sm btn-danger" onclick="removeFromCart(${index})"><i class="fas fa-trash"></i></button>
+                    </div>
+                `;
+            });
+            document.getElementById('cart-total').innerText = total;
+        }
+
+        function removeFromCart(index) {
+            cart.splice(index, 1);
+            updateCartUI();
+        }
+
+        // تنفيذ الطلب باستخدام دالة place_order الموجودة في قاعدة البيانات
+        async function checkout(e) {
+            e.preventDefault();
+            const name = document.getElementById('cust-name').value;
+            const phone = document.getElementById('cust-phone').value;
+            const address = document.getElementById('cust-address').value;
+
+            if (cart.length === 0) {
+                alert('السلة فارغة');
                 return;
             }
 
-            tbody.innerHTML = products.map(p => `
-                <tr>
-                    <td class="fw-bold">${escapeHTML(p.name)}</td>
-                    <td>${money(p.price)}</td>
-                    <td>
-                        <input type="number" min="0" class="form-control form-control-sm" style="width: 80px;" value="${p.stock}" onchange="updateStock('${p.id}', this.value)">
-                    </td>
-                    <td>
-                        <button class="btn btn-outline-danger btn-sm" onclick="deleteProduct('${p.id}')">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </td>
-                </tr>
-            `).join("");
+            const { data, error } = await supabaseClient.rpc('place_order', {
+                p_customer_name: name,
+                p_customer_phone: phone,
+                p_customer_address: address,
+                p_items: cart
+            });
+
+            if (error) {
+                alert('حدث خطأ أثناء إتمام الطلب: ' + error.message);
+            } else {
+                alert('تم إتمام الطلب بنجاح برقم: ' + data[0].order_id);
+                cart = [];
+                updateCartUI();
+                location.reload();
+            }
         }
 
-        function addNewProduct() {
-            const name = document.getElementById("new-p-name").value.trim();
-            const price = parseFloat(document.getElementById("new-p-price").value);
-            const stock = parseInt(document.getElementById("new-p-stock").value);
-            const desc = document.getElementById("new-p-desc").value.trim();
+        // إدارة تسجيل دخول الأدمن
+        async function adminLogin() {
+            const email = document.getElementById('admin-email').value;
+            const password = document.getElementById('admin-password').value;
 
-            if (!name || isNaN(price) || isNaN(stock)) {
-                alert("من فضلك أدخل البيانات الأساسية للمنتج بشكل صحيح");
+            const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+            if (error) {
+                alert('فشل تسجيل الدخول: ' + error.message);
+            } else {
+                checkAdminAuth();
+            }
+        }
+
+        async function checkAdminAuth() {
+            const { data: { user } } = await supabaseClient.auth.getUser();
+            if (user) {
+                // التحقق عبر الدالة is_admin التي أنشأتها في قاعدة البيانات
+                const { data: isAdmin } = await supabaseClient.rpc('is_admin');
+                if (isAdmin) {
+                    document.getElementById('admin-auth-container').style.display = 'none';
+                    document.getElementById('admin-dashboard').style.display = 'block';
+                    fetchAdminOrders();
+                } else {
+                    alert('هذا الحساب ليس لديه صلاحيات مشرف');
+                    adminLogout();
+                }
+            } else {
+                document.getElementById('admin-auth-container').style.display = 'block';
+                document.getElementById('admin-dashboard').style.display = 'none';
+            }
+        }
+
+        async function adminLogout() {
+            await supabaseClient.auth.signOut();
+            location.reload();
+        }
+
+        // إضافة منتج جديد (للأدمن) مع رفع الصورة لـ Storage
+        async function handleAddProduct(e) {
+            e.preventDefault();
+            const name = document.getElementById('prod-name').value;
+            const price = parseFloat(document.getElementById('prod-price').value);
+            const stock = parseInt(document.getElementById('prod-stock').value);
+            const description = document.getElementById('prod-desc').value;
+            const imageFile = document.getElementById('prod-image').files[0];
+
+            let imageUrl = '';
+            if (imageFile) {
+                const fileName = `${Date.now()}-${imageFile.name}`;
+                const { data: uploadData, error: uploadError } = await supabaseClient.storage
+                    .from('products')
+                    .upload(fileName, imageFile);
+
+                if (uploadError) {
+                    alert('خطأ في رفع الصورة: ' + uploadError.message);
+                    return;
+                }
+                const { data: publicURL } = supabaseClient.storage.from('products').getPublicUrl(fileName);
+                imageUrl = publicURL.publicUrl;
+            }
+
+            const { error } = await supabaseClient.from('products').insert([{ name, price, stock, description, image: imageUrl }]);
+            if (error) {
+                alert('خطأ في إضافة المنتج: ' + error.message);
+            } else {
+                alert('تمت إضافة المنتج بنجاح');
+                fetchProducts();
+                document.getElementById('addProductForm').reset();
+            }
+        }
+
+        // جلب الطلبات لوحة التحكم
+        async function fetchAdminOrders() {
+            const { data, error } = await supabaseClient.from('orders').select('*').order('created_at', { ascending: false });
+            const container = document.getElementById('admin-orders-list');
+            container.innerHTML = '';
+            if (error) {
+                container.innerHTML = `<p class="text-danger">غيرحمص لعدم وجود صلاحيات أو خطأ: ${error.message}</p>`;
                 return;
             }
-
-            const newProduct = {
-                id: Date.now().toString(),
-                name,
-                price,
-                stock,
-                description: desc
-            };
-
-            products.push(newProduct);
-            localStorage.setItem('my_store_products', JSON.stringify(products));
-
-            alert("تم نشر المنتج بنجاح");
-            
-            document.getElementById("new-p-name").value = "";
-            document.getElementById("new-p-price").value = "";
-            document.getElementById("new-p-stock").value = "5";
-            document.getElementById("new-p-desc").value = "";
-
-            renderProducts();
-            renderAdminProducts();
-        }
-
-        function updateStock(id, newStock) {
-            const stock = parseInt(newStock);
-            const p = products.find(item => item.id === id);
-            if (p && !isNaN(stock)) {
-                p.stock = stock;
-                localStorage.setItem('my_store_products', JSON.stringify(products));
-                renderProducts();
-            }
-        }
-
-        function deleteProduct(id) {
-            if (!confirm("هل أنت متأكد من حذف هذا المنتج؟")) return;
-
-            products = products.filter(item => item.id !== id);
-            localStorage.setItem('my_store_products', JSON.stringify(products));
-            renderProducts();
-            renderAdminProducts();
-            alert("تم حذف المنتج بنجاح");
-        }
-
-        function money(amount) {
-            return Number(amount).toFixed(2) + " ج.م";
-        }
-
-        function escapeHTML(str) {
-            return str ? str.replace(/[&<>'"]/g, 
-                tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
-            ) : '';
+            data.forEach(order => {
+                container.innerHTML += `
+                    <div class="card mb-2 p-3">
+                        <p><strong>العميل:</strong> ${order.customer_name} | <strong>الهاتف:</strong> ${order.customer_phone}</p>
+                        <p><strong>العنوان:</strong> ${order.customer_address}</p>
+                        <p><strong>الإجمالي:</strong> ${order.total} ر.س | <strong>الحالة:</strong> ${order.status}</p>
+                    </div>
+                `;
+            });
         }
     </script>
 </body>
