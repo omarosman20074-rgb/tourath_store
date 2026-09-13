@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>متجري الإلكتروني - لوحة التحكم</title>
+    <title>متجري الإلكتروني</title>
     <!-- Bootstrap 5 RTL CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.rtl.min.css">
     <!-- Font Awesome Icons -->
@@ -48,12 +48,11 @@
     <div class="container my-5">
         <h2 class="mb-4 text-center fw-bold">منتجاتنا المتاحة</h2>
         <div class="row" id="products-container">
-            <!-- سيتم تعبئة المنتجات تلقائياً عبر الجافاسكريبت -->
-            <div class="col-12 text-center text-muted py-5">جاري تحميل المنتجات...</div>
+            <!-- المنتجات ستظهر هنا -->
         </div>
     </div>
 
-    <!-- لوحة تحكم الأدمن (تظهر بعد تسجيل الدخول الناجح) -->
+    <!-- لوحة تحكم الأدمن -->
     <div class="container my-5" id="admin-panel">
         <div class="card shadow border-0 p-4 mb-5">
             <h3 class="text-danger mb-4"><i class="fas fa-gauge"></i> لوحة تحكم الأدمن</h3>
@@ -62,20 +61,17 @@
             <div class="card bg-light border-0 p-3 mb-4">
                 <h5 class="mb-3">إضافة منتج جديد</h5>
                 <div class="row g-3">
-                    <div class="col-md-3">
+                    <div class="col-md-4">
                         <input type="text" id="new-p-name" class="form-control" placeholder="اسم المنتج">
                     </div>
-                    <div class="col-md-2">
+                    <div class="col-md-3">
                         <input type="number" id="new-p-price" class="form-control" placeholder="السعر">
                     </div>
-                    <div class="col-md-2">
+                    <div class="col-md-3">
                         <input type="number" id="new-p-stock" class="form-control" placeholder="المخزون" value="5">
                     </div>
-                    <div class="col-md-3">
-                        <input type="file" id="new-p-file" class="form-control" accept="image/*">
-                    </div>
                     <div class="col-md-2">
-                        <button class="btn btn-danger w-100" id="publish-product-btn" onclick="addNewProduct()">
+                        <button class="btn btn-danger w-100" onclick="addNewProduct()">
                             <i class="fas fa-upload"></i> نشر
                         </button>
                     </div>
@@ -98,34 +94,14 @@
                         </tr>
                     </thead>
                     <tbody id="admin-products-table">
-                        <!-- تملئ برمجياً -->
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- جدول الطلبات -->
-            <h5 class="mb-3">طلبات العملاء</h5>
-            <div class="table-responsive">
-                <table class="table table-striped align-middle">
-                    <thead class="table-dark">
-                        <tr>
-                            <th>رقم الطلب</th>
-                            <th>العميل</th>
-                            <th>الهاتف</th>
-                            <th>الإجمالي</th>
-                            <th>الحالة</th>
-                            <th>التاريخ</th>
-                        </tr>
-                    </thead>
-                    <tbody id="admin-orders-table">
-                        <!-- تملئ برمجياً -->
+                        <!-- جدول المنتجات -->
                     </tbody>
                 </table>
             </div>
         </div>
     </div>
 
-    <!-- نافذة تسجيل دخول الأدمن (Modal) -->
+    <!-- نافذة تسجيل دخول الأدمن -->
     <div class="modal fade" id="admin-login-modal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content p-3">
@@ -150,62 +126,38 @@
         </div>
     </div>
 
-    <!-- مكتبة Supabase JS -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <!-- Bootstrap JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
-    <!-- كود الجافاسكريبت البرمجي للموقع -->
     <script>
-        // إعدادات Supabase (استبدل القيم أدناه ببيانات مشروعك الفعلية)
-        const SUPABASE_URL = "ضع_رابط_السูปابيس_هنا";
-        const SUPABASE_ANON_KEY = "ضع_مفتاح_الانون_هنا";
+        // تخزين محلي (LocalStorage) بدون أي حاجة لسيرفر خارجي
+        let products = JSON.parse(localStorage.getItem('my_store_products')) || [
+            { id: '1', name: 'منتج تجريبي 1', price: 150, stock: 10, description: 'هذا وصف تجريبي للمنتج الأول' }
+        ];
 
-        const { createClient } = supabase;
-        const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-        let products = [];
-        let cart = [];
-
-        document.addEventListener("DOMContentLoaded", async () => {
-            await fetchProducts();
+        document.addEventListener("DOMContentLoaded", () => {
+            renderProducts();
             setupEventListeners();
         });
 
-        async function fetchProducts() {
-            try {
-                const { data, error } = await db
-                    .from("products")
-                    .select("*")
-                    .order("created_at", { ascending: false });
-
-                if (error) throw error;
-                products = data || [];
-                renderProducts(products);
-            } catch (err) {
-                console.error("Error fetching products:", err);
-            }
-        }
-
-        function renderProducts(items) {
+        function renderProducts() {
             const container = document.getElementById("products-container");
             if (!container) return;
 
-            if (!items.length) {
+            if (!products.length) {
                 container.innerHTML = `<div class="col-12 text-center text-muted py-5">لا توجد منتجات متاحة حالياً</div>`;
                 return;
             }
 
-            container.innerHTML = items.map(p => `
+            container.innerHTML = products.map(p => `
                 <div class="col-md-4 mb-4">
                     <div class="card h-100 shadow-sm border-0">
-                        <img src="${p.image || 'https://via.placeholder.com/300'}" class="card-img-top" alt="${escapeHTML(p.name)}" style="height: 200px; object-fit: cover;">
                         <div class="card-body d-flex flex-column">
                             <h5 class="card-title fw-bold">${escapeHTML(p.name)}</h5>
                             <p class="card-text text-muted small flex-grow-1">${escapeHTML(p.description || '')}</p>
                             <div class="d-flex justify-content-between align-items-center mt-3">
                                 <span class="text-danger fw-bold fs-5">${money(p.price)}</span>
-                                <button class="btn btn-primary btn-sm" onclick="addToCart('${p.id}')">
+                                <button class="btn btn-primary btn-sm" onclick="alert('تم إضافة المنتج إلى السلة')">
                                     <i class="fas fa-cart-plus"></i> أضف للسلة
                                 </button>
                             </div>
@@ -222,41 +174,30 @@
             }
         }
 
-        // دالة تسجيل الدخول المخصصة بالبريد الذي طلبته
-        async function handleAdminLogin(event) {
-            if (event) event.preventDefault();
-            
-            const emailInput = document.getElementById("admin-email");
-            const passwordInput = document.getElementById("admin-password");
-            
-            if (!emailInput || !passwordInput) return;
-
-            const email = emailInput.value.trim();
-            const password = passwordInput.value.trim();
+        function handleAdminLogin(event) {
+            event.preventDefault();
+            const email = document.getElementById("admin-email").value.trim();
+            const password = document.getElementById("admin-password").value.trim();
 
             if (email === "omarosman20074@gmail.com" && password === "54902007") {
-                // إغلاق النافذة المنسدلة
                 const modalEl = document.getElementById('admin-login-modal');
                 const modal = bootstrap.Modal.getInstance(modalEl);
                 if (modal) modal.hide();
 
-                // إظهار لوحة التحكم
                 const adminPanel = document.getElementById("admin-panel");
                 if (adminPanel) {
                     adminPanel.style.display = "block";
                     adminPanel.scrollIntoView({ behavior: "smooth" });
                 }
 
-                await renderAdminProducts();
-                await renderAdminOrders();
-                
+                renderAdminProducts();
                 alert("تم تسجيل الدخول بنجاح كأدمن!");
             } else {
                 alert("بيانات الدخول غير صحيحة");
             }
         }
 
-        async function renderAdminProducts() {
+        function renderAdminProducts() {
             const tbody = document.getElementById("admin-products-table");
             if (!tbody) return;
 
@@ -281,122 +222,57 @@
             `).join("");
         }
 
-        async function renderAdminOrders() {
-            const tbody = document.getElementById("admin-orders-table");
-            if (!tbody) return;
-
-            const { data: orders, error } = await db
-                .from("orders")
-                .select("*")
-                .order("created_at", { ascending: false });
-
-            if (error || !orders || !orders.length) {
-                tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted">لا توجد طلبات حالياً</td></tr>`;
-                return;
-            }
-
-            tbody.innerHTML = orders.map(o => `
-                <tr>
-                    <td>#${o.id}</td>
-                    <td>${escapeHTML(o.customer_name)}</td>
-                    <td dir="ltr">${escapeHTML(o.customer_phone)}</td>
-                    <td class="fw-bold text-danger">${money(o.total)}</td>
-                    <td><span class="badge bg-secondary">${escapeHTML(o.status || "جديد")}</span></td>
-                    <td>${new Date(o.created_at).toLocaleDateString("ar-EG")}</td>
-                </tr>
-            `).join("");
-        }
-
-        async function addNewProduct() {
+        function addNewProduct() {
             const name = document.getElementById("new-p-name").value.trim();
             const price = parseFloat(document.getElementById("new-p-price").value);
             const stock = parseInt(document.getElementById("new-p-stock").value);
             const desc = document.getElementById("new-p-desc").value.trim();
-            const fileInput = document.getElementById("new-p-file");
-            const btn = document.getElementById("publish-product-btn");
 
             if (!name || isNaN(price) || isNaN(stock)) {
                 alert("من فضلك أدخل البيانات الأساسية للمنتج بشكل صحيح");
                 return;
             }
 
-            if (btn) {
-                btn.disabled = true;
-                btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> جاري النشر...';
-            }
+            const newProduct = {
+                id: Date.now().toString(),
+                name,
+                price,
+                stock,
+                description: desc
+            };
 
-            try {
-                let imageUrl = "";
+            products.push(newProduct);
+            localStorage.setItem('my_store_products', JSON.stringify(products));
 
-                if (fileInput && fileInput.files && fileInput.files[0]) {
-                    const file = fileInput.files[0];
-                    const fileExt = file.name.split(".").pop();
-                    const fileName = `${Date.now()}.${fileExt}`;
+            alert("تم نشر المنتج بنجاح");
+            
+            document.getElementById("new-p-name").value = "";
+            document.getElementById("new-p-price").value = "";
+            document.getElementById("new-p-stock").value = "5";
+            document.getElementById("new-p-desc").value = "";
 
-                    const { error: uploadError } = await db.storage
-                        .from("products")
-                        .upload(fileName, file);
-
-                    if (uploadError) throw uploadError;
-
-                    const { data: publicURLData } = db.storage
-                        .from("products")
-                        .getPublicUrl(fileName);
-
-                    imageUrl = publicURLData.publicUrl;
-                }
-
-                const { error: insertError } = await db.from("products").insert([
-                    { name, price, stock, description: desc, image: imageUrl }
-                ]);
-
-                if (insertError) throw insertError;
-
-                alert("تم نشر المنتج بنجاح");
-                
-                document.getElementById("new-p-name").value = "";
-                document.getElementById("new-p-price").value = "";
-                document.getElementById("new-p-stock").value = "5";
-                document.getElementById("new-p-desc").value = "";
-                if (fileInput) fileInput.value = "";
-
-                await fetchProducts();
-                await renderAdminProducts();
-
-            } catch (err) {
-                console.error(err);
-                alert(err.message || "حدث خطأ أثناء رفع المنتج");
-            } finally {
-                if (btn) {
-                    btn.disabled = false;
-                    btn.innerHTML = '<i class="fas fa-upload"></i> نشر';
-                }
-            }
+            renderProducts();
+            renderAdminProducts();
         }
 
-        async function updateStock(id, newStock) {
+        function updateStock(id, newStock) {
             const stock = parseInt(newStock);
-            if (isNaN(stock) || stock < 0) return;
-
-            const { error } = await db.from("products").update({ stock }).eq("id", id);
-            if (error) {
-                alert("تعذر تحديث المخزون");
-            } else {
-                await fetchProducts();
+            const p = products.find(item => item.id === id);
+            if (p && !isNaN(stock)) {
+                p.stock = stock;
+                localStorage.setItem('my_store_products', JSON.stringify(products));
+                renderProducts();
             }
         }
 
-        async function deleteProduct(id) {
+        function deleteProduct(id) {
             if (!confirm("هل أنت متأكد من حذف هذا المنتج؟")) return;
 
-            const { error } = await db.from("products").delete().eq("id", id);
-            if (error) {
-                alert("تعذر حذف المنتج");
-            } else {
-                alert("تم حذف المنتج بنجاح");
-                await fetchProducts();
-                await renderAdminProducts();
-            }
+            products = products.filter(item => item.id !== id);
+            localStorage.setItem('my_store_products', JSON.stringify(products));
+            renderProducts();
+            renderAdminProducts();
+            alert("تم حذف المنتج بنجاح");
         }
 
         function money(amount) {
@@ -407,19 +283,6 @@
             return str ? str.replace(/[&<>'"]/g, 
                 tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
             ) : '';
-        }
-
-        function addToCart(productId) {
-            const product = products.find(p => p.id === productId);
-            if (!product) return;
-            
-            const existing = cart.find(item => item.id === productId);
-            if (existing) {
-                existing.quantity += 1;
-            } else {
-                cart.push({ ...product, quantity: 1 });
-            }
-            alert("تم إضافة المنتج إلى السلة");
         }
     </script>
 </body>
